@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentient Lib — Integrated</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0c0f;--surface:#111418;--surface2:#181c22;--border:#232830;
+  --green:#00c896;--red:#ff3b3b;--amber:#f5a623;--blue:#4a9eff;
+  --text:#e8eaf0;--muted:#6b7280;
+  --mono:'JetBrains Mono',monospace;--display:'Syne',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;}
+
+.wrap{max-width:1180px;margin:0 auto;padding:16px;}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;}
+.brand{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.04em;}
+.brand em{color:var(--green);font-style:normal;}
+.brand small{font-size:11px;color:var(--muted);font-family:var(--mono);font-weight:400;margin-left:8px;}
+.topbar-right{display:flex;align-items:center;gap:14px;}
+.status-pill{display:flex;align-items:center;gap:7px;padding:5px 14px;border-radius:20px;
+  font-size:11px;font-weight:600;letter-spacing:.1em;border:1px solid;transition:all .3s;}
+.status-pill.booting  {background:rgba(107,114,128,.1);border-color:rgba(107,114,128,.3);color:var(--muted);}
+.status-pill.security {background:rgba(255,59,59,.1);border-color:rgba(255,59,59,.35);color:var(--red);}
+.status-pill.inactive {background:rgba(245,166,35,.08);border-color:rgba(245,166,35,.3);color:var(--amber);}
+.status-pill.librarian{background:rgba(0,200,150,.1);border-color:rgba(0,200,150,.3);color:var(--green);}
+.pill-dot{width:7px;height:7px;border-radius:50%;background:currentColor;}
+.blink{animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+#clock{font-size:11px;color:var(--muted);}
+
+/* HW STATUS BAR */
+.hw-bar{display:flex;gap:10px;margin-bottom:14px;}
+.hw-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;
+  font-size:10px;font-weight:600;letter-spacing:.08em;border:1px solid;}
+.hw-chip.ok  {background:rgba(0,200,150,.07);border-color:rgba(0,200,150,.25);color:var(--green);}
+.hw-chip.fail{background:rgba(255,59,59,.07);border-color:rgba(255,59,59,.22);color:var(--red);}
+.hw-chip.wait{background:rgba(107,114,128,.07);border-color:rgba(107,114,128,.22);color:var(--muted);}
+.hw-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;}
+.stat-label{font-size:9px;color:var(--muted);letter-spacing:.09em;margin-bottom:5px;}
+.stat-val{font-family:var(--display);font-size:22px;font-weight:700;line-height:1;}
+.stat-sub{font-size:9px;color:var(--muted);margin-top:3px;}
+
+/* ALERT */
+.alert{display:none;align-items:center;gap:8px;padding:10px 16px;
+  background:rgba(255,59,59,.07);border:1px solid rgba(255,59,59,.22);
+  border-radius:8px;margin-bottom:14px;font-size:12px;color:var(--red);}
+.alert.show{display:flex;}
+
+/* MAIN GRID */
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;margin-bottom:14px;}
+
+/* PANEL */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;border-bottom:1px solid var(--border);}
+.panel-title{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--muted);}
+.rec-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--red);font-weight:600;}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 1s infinite;}
+
+/* CAMERA */
+.cam-wrap{background:#050709;position:relative;}
+.cam-wrap img{width:100%;display:block;min-height:200px;}
+.cam-offline{width:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;font-size:12px;color:var(--muted);background:#060809;}
+.cam-offline span{font-size:10px;}
+
+/* PIPELINE */
+.pipeline{display:flex;align-items:center;padding:14px 16px;background:var(--surface2);gap:0;}
+.ps{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ps-icon{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;transition:all .3s;}
+.ps-icon svg{width:14px;height:14px;fill:none;stroke:var(--muted);stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;transition:stroke .3s;}
+.ps-icon.active{border-color:var(--amber);background:rgba(245,166,35,.1);}
+.ps-icon.active svg{stroke:var(--amber);}
+.ps-icon.done{border-color:var(--green);background:rgba(0,200,150,.12);}
+.ps-icon.done svg{stroke:var(--green);}
+.ps-label{font-size:9px;color:var(--muted);text-align:center;line-height:1.3;}
+.ps-arrow{width:22px;flex-shrink:0;height:1px;background:var(--border);margin-bottom:16px;}
+
+/* CAPTURES */
+.captures{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px;}
+.cap{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.cap-head{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;background:var(--surface2);}
+.cap-lbl{font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--muted);}
+.cap-badge{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:600;}
+.cap-badge.wait{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.cap-badge.saved{background:rgba(0,200,150,.12);color:var(--green);border:1px solid rgba(0,200,150,.3);}
+.cap-body{height:72px;background:#050709;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.cap-body img{width:100%;height:100%;object-fit:cover;display:block;}
+.cap-empty{font-size:10px;color:var(--muted);}
+
+/* DETECTION RESULT */
+.det-result{margin:0 16px 12px;border-radius:8px;padding:10px 14px;display:none;}
+.det-result.change  {background:rgba(255,59,59,.07);border:1px solid rgba(255,59,59,.22);color:var(--red);}
+.det-result.nochange{background:rgba(0,200,150,.07);border:1px solid rgba(0,200,150,.22);color:var(--green);}
+.det-title{font-size:11px;font-weight:600;margin-bottom:3px;}
+.det-sub{font-size:10px;opacity:.7;}
+
+/* RIGHT COL */
+.right-col{display:flex;flex-direction:column;gap:14px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.card-header{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 15px;border-bottom:1px solid var(--border);}
+.badge{font-size:10px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:2px 8px;color:var(--muted);}
+
+.add-form{padding:10px 14px;border-bottom:1px solid var(--border);}
+.add-form form{display:flex;gap:7px;}
+.add-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  padding:6px 9px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
+.add-input:focus{border-color:var(--green);}
+.add-input::placeholder{color:var(--muted);}
+.add-btn{background:var(--green);border:none;border-radius:6px;padding:6px 12px;
+  font-family:var(--mono);font-size:11px;font-weight:600;color:#000;cursor:pointer;}
+.add-btn:hover{opacity:.85;}
+
+.list-scroll{max-height:140px;overflow-y:auto;}
+.list-scroll::-webkit-scrollbar{width:3px;}
+.list-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.list-item{display:flex;align-items:flex-start;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);}
+.list-item:last-child{border-bottom:none;}
+.i-dot{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.i-dot.g{background:var(--green);}
+.i-dot.r{background:var(--red);}
+.i-title{font-size:11px;color:var(--text);flex:1;line-height:1.4;}
+.i-time{font-size:9px;color:var(--muted);flex-shrink:0;}
+.empty-note{padding:16px 14px;text-align:center;font-size:11px;color:var(--muted);}
+
+/* CHANGED BOOKS */
+.changed-grid{display:grid;grid-template-columns:1fr 1fr;}
+.changed-col{padding:10px 14px;}
+.changed-col+.changed-col{border-left:1px solid var(--border);}
+.changed-head{font-size:9px;font-weight:600;letter-spacing:.08em;margin-bottom:7px;display:flex;align-items:center;gap:5px;}
+.changed-head.r{color:var(--red);}
+.changed-head.a{color:var(--green);}
+.changed-head .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.book-chip{font-size:10px;padding:4px 8px;border-radius:5px;margin-bottom:4px;line-height:1.3;}
+.book-chip.r{background:rgba(255,59,59,.08);color:var(--red);border:1px solid rgba(255,59,59,.2);}
+.book-chip.a{background:rgba(0,200,150,.08);color:var(--green);border:1px solid rgba(0,200,150,.2);}
+.chip-none{font-size:10px;color:var(--muted);}
+
+/* LOG */
+.log-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.log-body{padding:10px 14px;max-height:120px;overflow-y:auto;font-size:10px;line-height:1.9;}
+.log-body::-webkit-scrollbar{width:3px;}
+.log-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.log-line{display:flex;gap:10px;}
+.log-ts{color:var(--muted);flex-shrink:0;}
+.log-msg{color:var(--text);}
+.log-msg.ok{color:var(--green);}
+.log-msg.warn{color:var(--amber);}
+.log-msg.error{color:var(--red);}
+.log-msg.info{color:var(--blue);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">SENTIENT <em>LIB</em><small>— FULLY AUTOMATIC</small></div>
+    <div class="topbar-right">
+      <div class="status-pill {{ state.status | lower }}" id="status-pill">
+        <div class="pill-dot blink"></div>
+        <span id="status-label">{{ state.status }}</span>
+      </div>
+      <div id="clock">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- HARDWARE STATUS -->
+  <div class="hw-bar" id="hw-bar">
+    <div class="hw-chip {{ 'ok' if state.camera_ok else 'fail' }}" id="hw-camera">
+      <div class="hw-dot"></div>
+      <span>CAMERA {{ 'ONLINE' if state.camera_ok else 'OFFLINE' }}</span>
+    </div>
+    <div class="hw-chip {{ 'ok' if state.arduino_ok else 'fail' }}" id="hw-arduino">
+      <div class="hw-dot"></div>
+      <span>ARDUINO {{ 'CONNECTED' if state.arduino_ok else 'NOT FOUND' }}</span>
+    </div>
+    <div class="hw-chip wait" id="hw-stage">
+      <div class="hw-dot" style="animation:none;"></div>
+      <span id="hw-stage-text">STAGE: {{ state.pipeline_stage | upper }}</span>
+    </div>
+    <div class="hw-chip wait" style="margin-left:auto;">
+      <div class="hw-dot" style="animation:none;background:var(--muted);"></div>
+      <span>MOTION EVENTS: <span id="hw-motion">{{ state.motion_events }}</span></span>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-label">SYSTEM MODE</div>
+      <div class="stat-val" id="st-mode"
+        style="font-size:13px;padding-top:5px;color:{% if state.status == 'SECURITY' %}var(--red){% elif state.status == 'LIBRARIAN' %}var(--green){% elif state.status == 'INACTIVE' %}var(--amber){% else %}var(--muted){% endif %};">
+        {{ state.status }}
+      </div>
+      <div class="stat-sub">auto-controlled</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">BOOKS IN DB</div>
+      <div class="stat-val" id="st-books" style="color:var(--text);">{{ books | length }}</div>
+      <div class="stat-sub">registered</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">MISSING FLAGS</div>
+      <div class="stat-val" id="st-missing" style="color:var(--red);">{{ missing | length }}</div>
+      <div class="stat-sub">flagged events</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">SHELF REMOVED</div>
+      <div class="stat-val" id="st-removed" style="color:var(--red);">{{ state.removed_books | length or '—' }}</div>
+      <div class="stat-sub">last detection</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">SHELF ADDED</div>
+      <div class="stat-val" id="st-added" style="color:var(--green);">{{ state.added_books | length or '—' }}</div>
+      <div class="stat-sub">last detection</div>
+    </div>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert {% if state.removed_books %}show{% endif %}" id="motion-alert">
+    ⚠ SHELF CHANGE DETECTED — Books flagged as missing. Security mode activated.
+  </div>
+
+  <div class="main-grid">
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">LIVE CAMERA FEED — AUTO PIPELINE</span>
+          <span class="rec-badge"><span class="rec-dot"></span>REC</span>
+        </div>
+
+        <!-- CAMERA FEED -->
+        <div class="cam-wrap">
+          <img src="/video_feed" alt="live feed"
+               onerror="this.style.display='none';document.getElementById('cam-offline').style.display='flex';">
+          <div id="cam-offline" class="cam-offline" style="display:none;">
+            Camera not available
+            <span>Check camera connection and restart</span>
+          </div>
+        </div>
+
+        <!-- PIPELINE -->
+        <div class="pipeline" id="pipeline">
+          <div class="ps">
+            <div class="ps-icon" id="pi-sensor">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2"/><path d="M12 8v4l3 3"/></svg>
+            </div>
+            <div class="ps-label">Ultrasonic<br>sensor</div>
+          </div>
+          <div class="ps-arrow"></div>
+          <div class="ps">
+            <div class="ps-icon" id="pi-arduino">
+              <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 12h2m6 0h2M12 9v6"/></svg>
+            </div>
+            <div class="ps-label">Arduino<br>COM3</div>
+          </div>
+          <div class="ps-arrow"></div>
+          <div class="ps">
+            <div class="ps-icon" id="pi-before">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+            <div class="ps-label">before.png<br>capture</div>
+          </div>
+          <div class="ps-arrow"></div>
+          <div class="ps">
+            <div class="ps-icon" id="pi-after">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+            <div class="ps-label">after.png<br>capture</div>
+          </div>
+          <div class="ps-arrow"></div>
+          <div class="ps">
+            <div class="ps-icon" id="pi-detect">
+              <svg viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/></svg>
+            </div>
+            <div class="ps-label">Shelf<br>detection</div>
+          </div>
+          <div class="ps-arrow"></div>
+          <div class="ps">
+            <div class="ps-icon" id="pi-db">
+              <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <div class="ps-label">DB<br>update</div>
+          </div>
+        </div>
+
+        <!-- CAPTURES -->
+        <div class="captures">
+          <div class="cap">
+            <div class="cap-head">
+              <span class="cap-lbl">BEFORE.PNG</span>
+              <span class="cap-badge {% if state.trigger_count >= 1 %}saved{% else %}wait{% endif %}" id="badge-before">
+                {% if state.trigger_count >= 1 %}SAVED{% else %}WAITING{% endif %}
+              </span>
+            </div>
+            <div class="cap-body" id="prev-before">
+              {% if state.trigger_count >= 1 %}
+                <img src="/static/before_thumb.jpg?t={{ now }}" alt="before">
+              {% else %}
+                <span class="cap-empty">Awaiting trigger 1</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="cap">
+            <div class="cap-head">
+              <span class="cap-lbl">AFTER.PNG</span>
+              <span class="cap-badge {% if state.trigger_count >= 2 %}saved{% else %}wait{% endif %}" id="badge-after">
+                {% if state.trigger_count >= 2 %}SAVED{% else %}WAITING{% endif %}
+              </span>
+            </div>
+            <div class="cap-body" id="prev-after">
+              {% if state.trigger_count >= 2 %}
+                <img src="/static/after_thumb.jpg?t={{ now }}" alt="after">
+              {% else %}
+                <span class="cap-empty">Awaiting trigger 2</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- DETECTION RESULT -->
+        <div class="det-result {% if state.pipeline_stage == 'done' %}{% if state.removed_books %}change{% else %}nochange{% endif %}{% endif %}"
+             id="det-result" style="{% if state.pipeline_stage == 'done' %}display:block{% else %}display:none{% endif %}">
+          <div class="det-title" id="det-title">
+            {% if state.removed_books %}SHELF CHANGE DETECTED{% else %}NO CHANGE DETECTED{% endif %}
+          </div>
+          <div class="det-sub">Threshold: {{ THRESHOLD }} pixel units — resets automatically in 5s</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-col">
+
+      <!-- BOOKS REGISTRY -->
+      <div class="card">
+        <div class="card-header">
+          <span class="panel-title">BOOKS REGISTRY</span>
+          <span class="badge" id="book-count">{{ books | length }}</span>
+        </div>
+        <div class="add-form">
+          <form method="POST" action="/add_book">
+            <input class="add-input" name="title" placeholder="Enter book title..." autocomplete="off">
+            <button type="submit" class="add-btn">ADD</button>
+          </form>
+        </div>
+        <div class="list-scroll" id="book-list">
+          {% if books %}
+            {% for b in books %}
+            <div class="list-item">
+              <span class="i-dot g"></span>
+              <span class="i-title">{{ b.title }}</span>
+              <span class="i-time">{{ b.added_at[:16] if b.added_at else '' }}</span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-note">No books registered</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- SHELF CHANGE RESULT -->
+      <div class="card" id="changed-card"
+           style="{{ '' if (state.pipeline_stage == 'done' and (state.removed_books or state.added_books)) else 'display:none' }}">
+        <div class="card-header">
+          <span class="panel-title">SHELF CHANGE — LAST DETECTION</span>
+        </div>
+        <div class="changed-grid">
+          <div class="changed-col">
+            <div class="changed-head r"><span class="dot"></span>REMOVED</div>
+            <div id="removed-list">
+              {% if state.removed_books %}
+                {% for t in state.removed_books %}<div class="book-chip r">{{ t }}</div>{% endfor %}
+              {% else %}<div class="chip-none">None</div>{% endif %}
+            </div>
+          </div>
+          <div class="changed-col">
+            <div class="changed-head a"><span class="dot"></span>ADDED</div>
+            <div id="added-list">
+              {% if state.added_books %}
+                {% for t in state.added_books %}<div class="book-chip a">{{ t }}</div>{% endfor %}
+              {% else %}<div class="chip-none">None</div>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MISSING / FLAGGED -->
+      <div class="card">
+        <div class="card-header">
+          <span class="panel-title">MISSING / FLAGGED</span>
+          <span class="badge" id="missing-count">{{ missing | length }}</span>
+        </div>
+        <div class="list-scroll" id="missing-list">
+          {% if missing %}
+            {% for m in missing %}
+            <div class="list-item">
+              <span class="i-dot r"></span>
+              <span class="i-title">{{ m.title }}</span>
+              <span class="i-time">{{ m.timestamp[:16] if m.timestamp else '' }}</span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-note">No missing reports</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="log-panel">
+    <div class="card-header">
+      <span class="panel-title">SYSTEM LOG — AUTO PIPELINE</span>
+      <span class="badge" id="log-count">{{ state.log | length }}</span>
+    </div>
+    <div class="log-body" id="log-body">
+      {% for entry in state.log %}
+      <div class="log-line">
+        <span class="log-ts">{{ entry.ts }}</span>
+        <span class="log-msg {{ entry.level }}">{{ entry.msg }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Clock
+function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-GB');}
+tick(); setInterval(tick,1000);
+
+// Pipeline stage → icon states
+const PIPE_MAP = {
+  booting:        {sensor:'',arduino:'',before:'',after:'',detect:'',db:''},
+  ready:          {sensor:'active',arduino:'active',before:'',after:'',detect:'',db:''},
+  waiting_before: {sensor:'active',arduino:'active',before:'active',after:'',detect:'',db:''},
+  waiting_after:  {sensor:'active',arduino:'active',before:'done',after:'active',detect:'',db:''},
+  detecting:      {sensor:'done',arduino:'done',before:'done',after:'done',detect:'active',db:''},
+  done:           {sensor:'done',arduino:'done',before:'done',after:'done',detect:'done',db:'done'},
+};
+
+function applyPipe(stage){
+  const m = PIPE_MAP[stage] || PIPE_MAP.booting;
+  ['sensor','arduino','before','after','detect','db'].forEach(k=>{
+    document.getElementById('pi-'+k).className = 'ps-icon ' + (m[k]||'');
+  });
+}
+
+function statusColor(s){
+  return s==='SECURITY'?'var(--red)':s==='LIBRARIAN'?'var(--green)':s==='INACTIVE'?'var(--amber)':'var(--muted)';
+}
+
+// Poll /api/state every 2s
+let lastTrigger = {{ state.trigger_count }};
+
+async function poll(){
+  try{
+    const r = await fetch('/api/state');
+    const d = await r.json();
+
+    // Status pill
+    const pill = document.getElementById('status-pill');
+    pill.className = 'status-pill ' + d.status.toLowerCase();
+    document.getElementById('status-label').textContent = d.status;
+
+    // HW chips
+    document.getElementById('hw-camera').className  = 'hw-chip ' + (d.camera_ok?'ok':'fail');
+    document.getElementById('hw-camera').querySelector('span').textContent = 'CAMERA ' + (d.camera_ok?'ONLINE':'OFFLINE');
+    document.getElementById('hw-arduino').className = 'hw-chip ' + (d.arduino_ok?'ok':'fail');
+    document.getElementById('hw-arduino').querySelector('span').textContent = 'ARDUINO ' + (d.arduino_ok?'CONNECTED':'NOT FOUND');
+    document.getElementById('hw-stage-text').textContent = 'STAGE: ' + d.pipeline_stage.toUpperCase();
+    document.getElementById('hw-motion').textContent = d.motion_events;
+
+    // Stats
+    const m = document.getElementById('st-mode');
+    m.textContent = d.status; m.style.color = statusColor(d.status);
+    document.getElementById('st-books').textContent   = d.books.length;
+    document.getElementById('st-missing').textContent = d.missing.length;
+    document.getElementById('st-removed').textContent = d.removed_books.length || '—';
+    document.getElementById('st-added').textContent   = d.added_books.length   || '—';
+    document.getElementById('book-count').textContent   = d.books.length;
+    document.getElementById('missing-count').textContent = d.missing.length;
+
+    // Alert
+    document.getElementById('motion-alert').className = 'alert' + (d.removed_books.length?' show':'');
+
+    // Pipeline icons
+    applyPipe(d.pipeline_stage);
+
+    // Capture badges + thumbnails
+    const tc = d.trigger_count;
+    const bb = document.getElementById('badge-before');
+    const pb = document.getElementById('prev-before');
+    if(tc >= 1 && lastTrigger < 1){
+      bb.className='cap-badge saved'; bb.textContent='SAVED';
+      pb.innerHTML='<img src="/static/before_thumb.jpg?t='+Date.now()+'" style="width:100%;height:100%;object-fit:cover;">';
+    }
+    const ba = document.getElementById('badge-after');
+    const pa = document.getElementById('prev-after');
+    if(tc >= 2 && lastTrigger < 2){
+      ba.className='cap-badge saved'; ba.textContent='SAVED';
+      pa.innerHTML='<img src="/static/after_thumb.jpg?t='+Date.now()+'" style="width:100%;height:100%;object-fit:cover;">';
+    }
+    if(tc === 0){
+      bb.className='cap-badge wait'; bb.textContent='WAITING';
+      pb.innerHTML='<span class="cap-empty">Awaiting trigger 1</span>';
+      ba.className='cap-badge wait'; ba.textContent='WAITING';
+      pa.innerHTML='<span class="cap-empty">Awaiting trigger 2</span>';
+    }
+    lastTrigger = tc;
+
+    // Detection result
+    const dr = document.getElementById('det-result');
+    if(d.pipeline_stage === 'done'){
+      dr.style.display = 'block';
+      dr.className = 'det-result ' + (d.removed_books.length?'change':'nochange');
+      document.getElementById('det-title').textContent = d.removed_books.length?'SHELF CHANGE DETECTED':'NO CHANGE DETECTED';
+    } else {
+      dr.style.display = 'none';
+    }
+
+    // Shelf change card
+    const cc = document.getElementById('changed-card');
+    if(d.pipeline_stage === 'done' && (d.removed_books.length || d.added_books.length)){
+      cc.style.display = 'block';
+      document.getElementById('removed-list').innerHTML = d.removed_books.length
+        ? d.removed_books.map(t=>'<div class="book-chip r">'+t+'</div>').join('')
+        : '<div class="chip-none">None</div>';
+      document.getElementById('added-list').innerHTML = d.added_books.length
+        ? d.added_books.map(t=>'<div class="book-chip a">'+t+'</div>').join('')
+        : '<div class="chip-none">None</div>';
+    } else if(d.pipeline_stage !== 'done'){
+      cc.style.display = 'none';
+    }
+
+    // Book list
+    const bl = document.getElementById('book-list');
+    bl.innerHTML = d.books.length
+      ? d.books.map(b=>'<div class="list-item"><span class="i-dot g"></span><span class="i-title">'+b.title+'</span><span class="i-time">'+(b.added_at||'').slice(0,16)+'</span></div>').join('')
+      : '<div class="empty-note">No books registered</div>';
+
+    // Missing list
+    const ml = document.getElementById('missing-list');
+    ml.innerHTML = d.missing.length
+      ? d.missing.map(m=>'<div class="list-item"><span class="i-dot r"></span><span class="i-title">'+m.title+'</span><span class="i-time">'+(m.timestamp||'').slice(0,16)+'</span></div>').join('')
+      : '<div class="empty-note">No missing reports</div>';
+
+    // Log
+    const lb = document.getElementById('log-body');
+    lb.innerHTML = d.log.map(e=>'<div class="log-line"><span class="log-ts">'+e.ts+'</span><span class="log-msg '+e.level+'">'+e.msg+'</span></div>').join('');
+    document.getElementById('log-count').textContent = d.log.length;
+
+  } catch(e){ console.warn('Poll error',e); }
+}
+
+applyPipe('{{ state.pipeline_stage }}');
+setInterval(poll, 2000);
+</script>
+</body>
+</html>
